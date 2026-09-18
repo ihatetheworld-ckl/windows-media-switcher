@@ -147,9 +147,6 @@ public sealed partial class DevicePopupWindow : Window
 
     private void OnActivated(object sender, WindowActivatedEventArgs e)
     {
-        if (_backdropConfig is not null)
-            _backdropConfig.IsInputActive = e.WindowActivationState != WindowActivationState.Deactivated;
-
         if (e.WindowActivationState == WindowActivationState.Deactivated
             && _settings.CloseOnBlur)
         {
