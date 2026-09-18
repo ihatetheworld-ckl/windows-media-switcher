@@ -26,7 +26,7 @@
                                 Click="OnRecordHotkey"
                                 HorizontalAlignment="Left"/>
                         <TextBlock x:Name="RecordHint"
-                                   Text=""
+                                   Text="默认 Win+Ctrl+V。若系统占用该组合，将用底层键盘钩子拦截。"
                                    Foreground="#8E8E93"
                                    FontSize="12"
                                    TextWrapping="Wrap"/>
@@ -49,12 +49,11 @@
                         <TextBlock Text="圆角" Foreground="#AEAEB2" FontSize="12"/>
                         <Slider x:Name="RadiusSlider" Minimum="12" Maximum="48" ValueChanged="OnGlassChanged"/>
 
-                        <!-- Live preview -->
                         <TextBlock Text="预览" Foreground="#AEAEB2" FontSize="12" Margin="0,8,0,0"/>
                         <Border x:Name="PreviewGlass"
                                 Height="72"
                                 CornerRadius="20"
-                                BorderThickness="1"
+                                BorderThickness="0"
                                 Padding="12">
                             <Grid>
                                 <Border x:Name="PreviewHairline" Height="1" VerticalAlignment="Top" Margin="8,0"/>
@@ -80,6 +79,28 @@
                         <ToggleSwitch x:Name="AutostartToggle"
                                       Header="开机时启动（托盘常驻）"
                                       Toggled="OnAutostartChanged"/>
+                        <ToggleSwitch x:Name="CheckUpdatesToggle"
+                                      Header="启动时检查更新"
+                                      Toggled="OnUpdatesToggleChanged"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Updates -->
+                <Border Background="#2C2C2E" CornerRadius="12" Padding="16">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="更新" Foreground="#F5F5F7" FontWeight="SemiBold" FontSize="16"/>
+                        <TextBlock x:Name="VersionLabel"
+                                   Foreground="#AEAEB2"
+                                   FontSize="13"/>
+                        <Button x:Name="CheckUpdateBtn"
+                                Content="检查更新"
+                                Click="OnCheckUpdate"
+                                HorizontalAlignment="Left"/>
+                        <TextBlock x:Name="UpdateStatus"
+                                   Text=""
+                                   Foreground="#8E8E93"
+                                   FontSize="12"
+                                   TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
 

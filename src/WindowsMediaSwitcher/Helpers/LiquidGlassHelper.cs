@@ -9,13 +9,11 @@ namespace WindowsMediaSwitcher.Helpers;
 
 /// <summary>
 /// Approximates Apple-style liquid glass: dark smoke tint + strong backdrop blur +
-/// 1px top hairline highlight. Avoids milky white Acrylic defaults.
+/// ONLY a 1px top-edge highlight. No full white rectangular border.
 /// Primary blur comes from Window.SystemBackdrop (DesktopAcrylicBackdrop).
-/// Tokens bind from AppSettings so settings sliders update live.
 /// </summary>
 public static class LiquidGlassHelper
 {
-    // Dark smoke tint base
     private static readonly Color SmokeTint = Color.FromArgb(255, 0x14, 0x16, 0x1C);
 
     public static void ApplyToBorder(Border border, AppSettings s)
@@ -28,8 +26,9 @@ public static class LiquidGlassHelper
         border.Background = new SolidColorBrush(fill);
         border.CornerRadius = new CornerRadius(s.GlassRadius);
 
-        border.BorderThickness = new Thickness(1);
-        border.BorderBrush = new SolidColorBrush(Color.FromArgb(40, 255, 255, 255));
+        // Design intent: NO full white rectangle border — hairline is separate top-only element.
+        border.BorderThickness = new Thickness(0);
+        border.BorderBrush = null;
     }
 
     public static Brush CreateHairlineBrush(AppSettings s)
@@ -72,14 +71,10 @@ public static class LiquidGlassHelper
     public static Color AccentCheck => Color.FromArgb(255, 0x0A, 0x84, 0xFF);
     public static Color WhiteText => Color.FromArgb(255, 0xF5, 0xF5, 0xF7);
 
-    /// <summary>
-    /// Tint color for DesktopAcrylicController / SystemBackdrop when configured in code.
-    /// </summary>
     public static Color BackdropTint(AppSettings s)
     {
         var opacity = Math.Clamp(s.GlassOpacity / 100.0, 0.04, 0.45);
         byte a = (byte)Math.Clamp((int)(opacity * 255), 10, 100);
-        // Slight cool smoke (#B4BEDC mixed into dark)
         return Color.FromArgb(a, 0x1A, 0x1E, 0x28);
     }
 }

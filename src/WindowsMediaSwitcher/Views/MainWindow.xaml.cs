@@ -11,8 +11,10 @@ namespace WindowsMediaSwitcher.Views;
 public sealed partial class MainWindow : Window
 {
     private DevicePopupWindow? _popup;
+    // Strong reference so SettingsWindow is not GC'd while open
     private SettingsWindow? _settings;
     private bool _hotkeyAttached;
+    private bool _startupUpdateScheduled;
 
     public ICommand ShowPopupCommand { get; }
 
@@ -42,7 +44,6 @@ public sealed partial class MainWindow : Window
         Closed += OnClosed;
 
         TrySetTrayIcon();
-        // Left click is bound via LeftClickCommand in XAML (H.NotifyIcon has no LeftClick event)
 
         App.Hotkey.HotkeyPressed += (_, _) =>
         {
@@ -61,7 +62,6 @@ public sealed partial class MainWindow : Window
             var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico");
             if (!File.Exists(iconPath)) return;
 
-            // Prefer path-based Icon API when present (H.NotifyIcon versions differ)
             var trayType = TrayIcon.GetType();
             var iconProp = trayType.GetProperty("Icon");
             if (iconProp?.PropertyType == typeof(string))
@@ -80,15 +80,31 @@ public sealed partial class MainWindow : Window
 
     private void OnActivated(object sender, WindowActivatedEventArgs e)
     {
-        if (_hotkeyAttached) return;
-        var hwnd = WindowNative.GetWindowHandle(this);
-        if (hwnd == IntPtr.Zero) return;
+        if (!_hotkeyAttached)
+        {
+            var hwnd = WindowNative.GetWindowHandle(this);
+            if (hwnd != IntPtr.Zero)
+            {
+                WindowNativeHelper.HideFromTaskbar(hwnd);
+                App.Hotkey.Attach(hwnd);
+                ReregisterHotkey();
+                _hotkeyAttached = true;
+            }
+        }
 
-        WindowNativeHelper.HideFromTaskbar(hwnd);
-        App.Hotkey.Attach(hwnd);
-        ReregisterHotkey();
-        _hotkeyAttached = true;
         AppWindow.Hide();
+
+        if (!_startupUpdateScheduled)
+        {
+            _startupUpdateScheduled = true;
+            if (App.Settings.Current.CheckUpdatesOnStartup)
+            {
+                DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+                {
+                    _ = CheckUpdatesQuietAsync();
+                });
+            }
+        }
     }
 
     private void ReregisterHotkey()
@@ -112,16 +128,89 @@ public sealed partial class MainWindow : Window
         _popup.ShowPopup();
     }
 
+    /// <summary>
+    /// Tray MenuFlyout closes before a new Window can activate if we open synchronously.
+    /// Defer to DispatcherQueue and keep a strong reference; surface errors via tray tip.
+    /// </summary>
     private void OnOpenSettings(object sender, RoutedEventArgs e)
     {
-        if (_settings is not null)
+        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal, OpenSettingsCore);
+    }
+
+    private void OpenSettingsCore()
+    {
+        try
         {
+            if (_settings is not null)
+            {
+                try { _settings.AppWindow.Show(); } catch { /* */ }
+                _settings.Activate();
+                var existing = WindowNative.GetWindowHandle(_settings);
+                if (existing != IntPtr.Zero)
+                {
+                    NativeMethods.ShowWindow(existing, NativeMethods.SW_RESTORE);
+                    NativeMethods.SetForegroundWindow(existing);
+                }
+                return;
+            }
+
+            _settings = new SettingsWindow();
+            _settings.Closed += (_, _) => _settings = null;
+            try { _settings.AppWindow.Show(); } catch { /* */ }
             _settings.Activate();
-            return;
+
+            var hwnd = WindowNative.GetWindowHandle(_settings);
+            if (hwnd != IntPtr.Zero)
+            {
+                NativeMethods.ShowWindow(hwnd, NativeMethods.SW_SHOW);
+                NativeMethods.SetForegroundWindow(hwnd);
+            }
         }
-        _settings = new SettingsWindow();
-        _settings.Closed += (_, _) => _settings = null;
-        _settings.Activate();
+        catch (Exception ex)
+        {
+            TryTrayNotify("无法打开设置", ex.Message);
+        }
+    }
+
+    private async Task CheckUpdatesQuietAsync()
+    {
+        try
+        {
+            var result = await App.Updates.CheckForUpdatesAsync().ConfigureAwait(true);
+            if (result.UpdateAvailable && result.LatestVersion is not null)
+            {
+                TryTrayNotify(
+                    "发现新版本",
+                    $"v{result.LatestVersion} 可用（当前 v{result.CurrentVersion}）。请在设置中点击「检查更新」。");
+            }
+        }
+        catch
+        {
+            // Quiet on startup
+        }
+    }
+
+    internal void TryTrayNotify(string title, string message)
+    {
+        try
+        {
+            // H.NotifyIcon balloon / ShowNotification APIs vary by version — reflect safely
+            var trayType = TrayIcon.GetType();
+            var showNotif = trayType.GetMethod("ShowNotification",
+                new[] { typeof(string), typeof(string) });
+            if (showNotif is not null)
+            {
+                showNotif.Invoke(TrayIcon, new object[] { title, message });
+                return;
+            }
+
+            // Fallback: ToolTipText flash
+            TrayIcon.ToolTipText = $"{title}: {message}";
+        }
+        catch
+        {
+            // ignore
+        }
     }
 
     private void OnExit(object sender, RoutedEventArgs e)

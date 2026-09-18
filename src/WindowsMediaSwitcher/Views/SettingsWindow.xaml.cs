@@ -14,26 +14,26 @@ public sealed partial class SettingsWindow : Window
     private bool _loading = true;
     private bool _recording;
     private AppSettings _draft;
+    private string? _pendingDownloadUrl;
 
     public SettingsWindow()
     {
         InitializeComponent();
         _draft = App.Settings.Current.Clone();
 
-        AppWindow.Resize(new SizeInt32(520, 720));
+        AppWindow.Resize(new SizeInt32(520, 780));
         Title = "设置 — 媒体输出切换器";
 
         LoadFromSettings();
         UpdatePreview();
+        VersionLabel.Text = $"当前版本 v{App.Updates.CurrentVersion}";
         _loading = false;
 
-        // Capture keys while recording
         RootHook();
     }
 
     private void RootHook()
     {
-        // Content root key events for hotkey recorder
         if (Content is UIElement root)
         {
             root.KeyDown += OnRootKeyDown;
@@ -51,13 +51,13 @@ public sealed partial class SettingsWindow : Window
         CloseOnBlurToggle.IsOn = _draft.CloseOnBlur;
         CloseOnSelectToggle.IsOn = _draft.CloseOnSelect;
         AutostartToggle.IsOn = _draft.StartWithWindows;
+        CheckUpdatesToggle.IsOn = _draft.CheckUpdatesOnStartup;
     }
 
     private void Persist()
     {
         if (_loading) return;
         App.Settings.Replace(_draft.Clone());
-        // Hotkey re-register happens via SettingsChanged on MainWindow
     }
 
     private void OnGlassChanged(object sender, RangeBaseValueChangedEventArgs e)
@@ -94,6 +94,75 @@ public sealed partial class SettingsWindow : Window
         Persist();
     }
 
+    private void OnUpdatesToggleChanged(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        _draft.CheckUpdatesOnStartup = CheckUpdatesToggle.IsOn;
+        Persist();
+    }
+
+    private async void OnCheckUpdate(object sender, RoutedEventArgs e)
+    {
+        CheckUpdateBtn.IsEnabled = false;
+        UpdateStatus.Text = "正在检查…";
+        _pendingDownloadUrl = null;
+
+        try
+        {
+            var result = await App.Updates.CheckForUpdatesAsync();
+            if (result.Error is not null && !result.UpdateAvailable)
+            {
+                UpdateStatus.Text = $"检查失败：{result.Error}";
+                return;
+            }
+
+            if (!result.UpdateAvailable)
+            {
+                UpdateStatus.Text = $"已是最新版本（v{result.CurrentVersion}）";
+                return;
+            }
+
+            if (string.IsNullOrEmpty(result.DownloadUrl))
+            {
+                UpdateStatus.Text = result.Error ?? "发现新版本但缺少下载地址";
+                return;
+            }
+
+            _pendingDownloadUrl = result.DownloadUrl;
+            UpdateStatus.Text = $"发现 v{result.LatestVersion}（当前 v{result.CurrentVersion}）。点击下方确认安装。";
+            CheckUpdateBtn.Content = "下载并安装更新";
+            CheckUpdateBtn.Click -= OnCheckUpdate;
+            CheckUpdateBtn.Click += OnInstallUpdate;
+        }
+        catch (Exception ex)
+        {
+            UpdateStatus.Text = $"检查失败：{ex.Message}";
+        }
+        finally
+        {
+            CheckUpdateBtn.IsEnabled = true;
+        }
+    }
+
+    private async void OnInstallUpdate(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(_pendingDownloadUrl)) return;
+
+        CheckUpdateBtn.IsEnabled = false;
+        UpdateStatus.Text = "正在下载并准备更新，应用即将退出…";
+
+        try
+        {
+            await App.Updates.ApplyUpdateAsync(_pendingDownloadUrl);
+            Application.Current.Exit();
+        }
+        catch (Exception ex)
+        {
+            UpdateStatus.Text = $"更新失败：{ex.Message}";
+            CheckUpdateBtn.IsEnabled = true;
+        }
+    }
+
     private void OnRecordHotkey(object sender, RoutedEventArgs e)
     {
         _recording = true;
@@ -114,7 +183,6 @@ public sealed partial class SettingsWindow : Window
             return;
         }
 
-        // Ignore pure modifiers
         if (e.Key is VirtualKey.Control or VirtualKey.Shift or VirtualKey.Menu
             or VirtualKey.LeftWindows or VirtualKey.RightWindows
             or VirtualKey.LeftControl or VirtualKey.RightControl

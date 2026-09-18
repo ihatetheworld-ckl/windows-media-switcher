@@ -41,4 +41,4 @@ jobs:
           gh release create $tag `
             "dist/WindowsMediaSwitcher-win-x64.zip" `
             --title "Windows Media Switcher $tag" `
-            --notes "Unpackaged win-x64 build. Unzip and run WindowsMediaSwitcher.exe. Default hotkey: Win+Shift+V."
+            --notes "Unpackaged win-x64 build. Unzip and run WindowsMediaSwitcher.exe. Default hotkey: Win+Ctrl+V. Unpackaged win-x64; auto-update via GitHub Releases."

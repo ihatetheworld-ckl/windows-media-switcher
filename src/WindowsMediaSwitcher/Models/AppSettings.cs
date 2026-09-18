@@ -5,11 +5,11 @@ namespace WindowsMediaSwitcher.Models;
 /// <summary>Persisted settings for Windows Media Switcher.</summary>
 public sealed class AppSettings
 {
-    // Hotkey: default Win+Shift+V
+    // Hotkey: default Win+Ctrl+V (was Win+Shift+V)
     public bool HotkeyWin { get; set; } = true;
-    public bool HotkeyCtrl { get; set; } = false;
+    public bool HotkeyCtrl { get; set; } = true;
     public bool HotkeyAlt { get; set; } = false;
-    public bool HotkeyShift { get; set; } = true;
+    public bool HotkeyShift { get; set; } = false;
     public int HotkeyVirtualKey { get; set; } = 0x56; // 'V'
 
     // Liquid Glass tokens
@@ -23,6 +23,7 @@ public sealed class AppSettings
     public bool CloseOnBlur { get; set; } = true;
     public bool CloseOnSelect { get; set; } = true;
     public bool StartWithWindows { get; set; } = false;
+    public bool CheckUpdatesOnStartup { get; set; } = true;
 
     [JsonIgnore]
     public string HotkeyDisplay
@@ -66,5 +67,6 @@ public sealed class AppSettings
         CloseOnBlur = CloseOnBlur,
         CloseOnSelect = CloseOnSelect,
         StartWithWindows = StartWithWindows,
+        CheckUpdatesOnStartup = CheckUpdatesOnStartup,
     };
 }

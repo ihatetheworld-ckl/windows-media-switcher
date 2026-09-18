@@ -3,7 +3,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Windowing;
-using Microsoft.UI.Composition.SystemBackdrops;
 using Windows.Graphics;
 using Windows.System;
 using WindowsMediaSwitcher.Helpers;
@@ -17,13 +16,18 @@ public sealed partial class DevicePopupWindow : Window
     private readonly AppSettings _settings;
     public bool IsOpen { get; private set; }
 
+    private const int PopupWidth = 440;
+    private const int MaxPopupHeight = 560;
+    private const int RowHeight = 56;
+    private const int ChromeHeight = 56; // title + padding + hairline
+
     public DevicePopupWindow()
     {
         InitializeComponent();
         _settings = App.Settings.Current;
 
         ExtendsContentIntoTitleBar = true;
-        SystemBackdrop = null; // custom acrylic below
+        SystemBackdrop = null;
 
         try
         {
@@ -38,7 +42,7 @@ public sealed partial class DevicePopupWindow : Window
         catch { /* */ }
 
         AppWindow.IsShownInSwitchers = false;
-        AppWindow.Resize(new SizeInt32(360, 480));
+        AppWindow.Resize(new SizeInt32(PopupWidth, 320));
 
         Activated += OnActivated;
         Closed += (_, _) =>
@@ -56,12 +60,12 @@ public sealed partial class DevicePopupWindow : Window
         PositionBottomRight();
         var hwnd = WindowNative.GetWindowHandle(this);
         WindowNativeHelper.ApplyToolWindowTopmost(hwnd);
+        WindowNativeHelper.ApplyBorderlessRoundedChrome(hwnd, roundCorners: true);
 
         TrySetSystemBackdrop();
         Activate();
         IsOpen = true;
 
-        // Focus list for Enter key
         DeviceList.Focus(FocusState.Programmatic);
         if (DeviceList.Items.Count > 0)
         {
@@ -94,7 +98,6 @@ public sealed partial class DevicePopupWindow : Window
     {
         try
         {
-            // Prefer built-in backdrop API (avoids ICompositionSupportsSystemBackdrop WinRT cast issues)
             if (Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported())
             {
                 SystemBackdrop = new Microsoft.UI.Xaml.Media.DesktopAcrylicBackdrop();
@@ -111,7 +114,6 @@ public sealed partial class DevicePopupWindow : Window
         try { SystemBackdrop = null; } catch { /* ignore */ }
     }
 
-
     private void PositionBottomRight()
     {
         try
@@ -122,14 +124,13 @@ public sealed partial class DevicePopupWindow : Window
             var work = display.WorkArea;
 
             const int margin = 20;
-            const int width = 360;
-            // Estimate height from item count
             var rows = Math.Max(1, DeviceList.Items.Count);
-            var height = Math.Min(480, 56 + rows * 54);
-            height = Math.Max(height, 120);
+            // Fit all typical device lists; ScrollViewer handles overflow beyond MaxPopupHeight
+            var height = Math.Min(MaxPopupHeight, ChromeHeight + rows * RowHeight + 24);
+            height = Math.Max(height, 140);
 
-            AppWindow.Resize(new SizeInt32(width, height));
-            var x = work.X + work.Width - width - margin;
+            AppWindow.Resize(new SizeInt32(PopupWidth, height));
+            var x = work.X + work.Width - PopupWidth - margin;
             var y = work.Y + work.Height - height - margin;
             AppWindow.Move(new PointInt32(x, y));
         }

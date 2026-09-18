@@ -12,12 +12,15 @@ public partial class App : Application
     public static AudioDeviceService Audio { get; } = new();
     public static AutostartService Autostart { get; } = new();
     public static HotkeyService Hotkey { get; } = new();
+    public static UpdateService Updates { get; } = new();
 
     public static Window? MainHost => ((App)Current)._mainWindow;
 
     public App()
     {
         InitializeComponent();
+        // Keep handled so tray host stays alive, but do not silently drop everything forever —
+        // Settings open path now surfaces errors via tray tip.
         UnhandledException += (_, e) => { e.Handled = true; };
     }
 

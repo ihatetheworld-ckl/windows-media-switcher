@@ -11,68 +11,84 @@
             <helpers:BoolToVisibilityConverter x:Key="BoolToVis"/>
         </Grid.Resources>
 
+        <!-- Width sized for long device names; height grows with content + ScrollViewer -->
         <Border x:Name="GlassHost"
-                Width="360"
-                MaxHeight="480"
-                Padding="10"
-                BorderThickness="1">
+                Width="440"
+                MinHeight="120"
+                MaxHeight="560"
+                Padding="12,14,12,14"
+                BorderThickness="0">
             <Grid>
                 <Border x:Name="Hairline"
                         Height="1"
                         VerticalAlignment="Top"
-                        Margin="12,0,12,0"
+                        Margin="16,0,16,0"
                         IsHitTestVisible="False"/>
 
-                <StackPanel>
+                <Grid Margin="0,4,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
                     <TextBlock Text="播放设备"
                                Foreground="#F5F5F7"
                                FontSize="13"
                                FontWeight="SemiBold"
                                Opacity="0.7"
-                               Margin="8,4,8,8"/>
+                               Margin="8,0,8,10"/>
 
-                    <ListView x:Name="DeviceList"
-                              SelectionMode="Single"
-                              IsItemClickEnabled="True"
-                              ItemClick="OnDeviceClick"
-                              KeyDown="OnKeyDown"
-                              MaxHeight="400"
-                              Background="Transparent"
-                              BorderThickness="0">
-                        <ListView.ItemContainerStyle>
-                            <Style TargetType="ListViewItem">
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                <Setter Property="Padding" Value="0"/>
-                                <Setter Property="Margin" Value="0,2"/>
-                                <Setter Property="MinHeight" Value="50"/>
-                                <Setter Property="Background" Value="Transparent"/>
-                            </Style>
-                        </ListView.ItemContainerStyle>
-                        <ListView.ItemTemplate>
-                            <DataTemplate>
-                                <Border Height="50" CornerRadius="13" Padding="14,0" Background="Transparent">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{Binding Name}"
-                                                   Foreground="#F5F5F7"
-                                                   FontSize="15"
-                                                   VerticalAlignment="Center"
-                                                   TextTrimming="CharacterEllipsis"/>
-                                        <FontIcon Grid.Column="1"
-                                                  Glyph="&#xE73E;"
-                                                  FontSize="16"
-                                                  Foreground="#0A84FF"
-                                                  Visibility="{Binding IsDefault, Converter={StaticResource BoolToVis}}"
-                                                  VerticalAlignment="Center"/>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
-                </StackPanel>
+                    <ScrollViewer Grid.Row="1"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  MaxHeight="480">
+                        <ListView x:Name="DeviceList"
+                                  SelectionMode="Single"
+                                  IsItemClickEnabled="True"
+                                  ItemClick="OnDeviceClick"
+                                  KeyDown="OnKeyDown"
+                                  Background="Transparent"
+                                  BorderThickness="0"
+                                  ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    <Setter Property="Padding" Value="0"/>
+                                    <Setter Property="Margin" Value="0,2"/>
+                                    <Setter Property="MinHeight" Value="52"/>
+                                    <Setter Property="Background" Value="Transparent"/>
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Height="52" CornerRadius="13" Padding="14,0" Background="Transparent"
+                                            ToolTipService.ToolTip="{Binding Name}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Name}"
+                                                       Foreground="#F5F5F7"
+                                                       FontSize="15"
+                                                       VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       TextWrapping="NoWrap"
+                                                       ToolTipService.ToolTip="{Binding Name}"/>
+                                            <FontIcon Grid.Column="1"
+                                                      Glyph="&#xE73E;"
+                                                      FontSize="16"
+                                                      Foreground="#0A84FF"
+                                                      Margin="8,0,0,0"
+                                                      Visibility="{Binding IsDefault, Converter={StaticResource BoolToVis}}"
+                                                      VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </ScrollViewer>
+                </Grid>
             </Grid>
         </Border>
     </Grid>
