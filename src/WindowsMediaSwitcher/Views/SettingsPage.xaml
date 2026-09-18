@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Settings UI lives in SettingsWindow for unpackaged tray MVP.
+     This Page shell exists so the suggested Views/SettingsPage path is present
+     and can be navigated into a Frame later if desired. -->
+<Page
+    x:Class="WindowsMediaSwitcher.Views.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <TextBlock Text="请使用 SettingsWindow。" Margin="24" Foreground="Gray"/>
+</Page>

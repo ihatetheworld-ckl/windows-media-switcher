@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+**/artifacts/
+dist/*.zip
+.vs/
+*.user
+*.suo
+AppPackages/
+BundleArtifacts/
+_ReSharper*/
+*.DotSettings.user

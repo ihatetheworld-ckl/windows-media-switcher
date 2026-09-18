@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="WindowsMediaSwitcher.Views.DevicePopupWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:helpers="using:WindowsMediaSwitcher.Helpers"
+    Title="输出设备">
+
+    <Grid x:Name="Root" Background="Transparent">
+        <Grid.Resources>
+            <helpers:BoolToVisibilityConverter x:Key="BoolToVis"/>
+        </Grid.Resources>
+
+        <Border x:Name="GlassHost"
+                Width="360"
+                MaxHeight="480"
+                Padding="10"
+                BorderThickness="1">
+            <Grid>
+                <Border x:Name="Hairline"
+                        Height="1"
+                        VerticalAlignment="Top"
+                        Margin="12,0,12,0"
+                        IsHitTestVisible="False"/>
+
+                <StackPanel>
+                    <TextBlock Text="播放设备"
+                               Foreground="#F5F5F7"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               Opacity="0.7"
+                               Margin="8,4,8,8"/>
+
+                    <ListView x:Name="DeviceList"
+                              SelectionMode="Single"
+                              IsItemClickEnabled="True"
+                              ItemClick="OnDeviceClick"
+                              KeyDown="OnKeyDown"
+                              MaxHeight="400"
+                              Background="Transparent"
+                              BorderThickness="0">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="Margin" Value="0,2"/>
+                                <Setter Property="MinHeight" Value="50"/>
+                                <Setter Property="Background" Value="Transparent"/>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Border Height="50" CornerRadius="13" Padding="14,0" Background="Transparent">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Name}"
+                                                   Foreground="#F5F5F7"
+                                                   FontSize="15"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <FontIcon Grid.Column="1"
+                                                  Glyph="&#xE73E;"
+                                                  FontSize="16"
+                                                  Foreground="#0A84FF"
+                                                  Visibility="{Binding IsDefault, Converter={StaticResource BoolToVis}}"
+                                                  VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
