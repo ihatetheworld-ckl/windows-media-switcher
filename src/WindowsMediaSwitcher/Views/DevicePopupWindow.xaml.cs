@@ -4,7 +4,6 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Composition.SystemBackdrops;
-using WinRT; // for ICompositionSupportsSystemBackdrop
 using Windows.Graphics;
 using Windows.System;
 using WindowsMediaSwitcher.Helpers;
@@ -16,8 +15,6 @@ namespace WindowsMediaSwitcher.Views;
 public sealed partial class DevicePopupWindow : Window
 {
     private readonly AppSettings _settings;
-    private DesktopAcrylicController? _acrylicController;
-    private SystemBackdropConfiguration? _backdropConfig;
     public bool IsOpen { get; private set; }
 
     public DevicePopupWindow()
@@ -60,7 +57,7 @@ public sealed partial class DevicePopupWindow : Window
         var hwnd = WindowNative.GetWindowHandle(this);
         WindowNativeHelper.ApplyToolWindowTopmost(hwnd);
 
-        TrySetAcrylic();
+        TrySetSystemBackdrop();
         Activate();
         IsOpen = true;
 
@@ -93,40 +90,27 @@ public sealed partial class DevicePopupWindow : Window
         Hairline.Background = LiquidGlassHelper.CreateHairlineBrush(_settings);
     }
 
-    private void TrySetAcrylic()
+    private void TrySetSystemBackdrop()
     {
-        if (!DesktopAcrylicController.IsSupported()) return;
         try
         {
-            _backdropConfig = new SystemBackdropConfiguration
+            // Prefer built-in backdrop API (avoids ICompositionSupportsSystemBackdrop WinRT cast issues)
+            if (Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported())
             {
-                IsInputActive = true,
-                Theme = SystemBackdropTheme.Dark,
-            };
-            _acrylicController = new DesktopAcrylicController
-            {
-                Kind = DesktopAcrylicKind.Thin,
-                LuminosityOpacity = 0.15f,
-                TintOpacity = (float)Math.Clamp(_settings.GlassOpacity / 100.0, 0.04, 0.35),
-                TintColor = LiquidGlassHelper.BackdropTint(_settings),
-            };
-            var target = this.As<ICompositionSupportsSystemBackdrop>();
-            _acrylicController.AddSystemBackdropTarget(target);
-            _acrylicController.SetSystemBackdropConfiguration(_backdropConfig);
+                SystemBackdrop = new Microsoft.UI.Xaml.Media.DesktopAcrylicBackdrop();
+            }
         }
         catch
         {
-            DisposeBackdrop();
-            // Fallback: semi-transparent dark brush already on GlassHost
+            // Fallback: LiquidGlassHelper tint on GlassHost already applied
         }
     }
 
     private void DisposeBackdrop()
     {
-        _acrylicController?.Dispose();
-        _acrylicController = null;
-        _backdropConfig = null;
+        try { SystemBackdrop = null; } catch { /* ignore */ }
     }
+
 
     private void PositionBottomRight()
     {

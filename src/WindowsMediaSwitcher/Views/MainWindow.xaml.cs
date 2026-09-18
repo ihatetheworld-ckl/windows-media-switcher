@@ -42,7 +42,7 @@ public sealed partial class MainWindow : Window
         Closed += OnClosed;
 
         TrySetTrayIcon();
-        TrayIcon.LeftClick += (_, _) => ShowDevicePopup();
+        // Left click is bound via LeftClickCommand in XAML (H.NotifyIcon has no LeftClick event)
 
         App.Hotkey.HotkeyPressed += (_, _) =>
         {
